@@ -7,7 +7,7 @@ locals {
     "10.254.2.0/24",
   ]
 
-  Avilability_Zones = [
+  Availability_Zones = [
     "a",
     "b",
     "c",
@@ -42,7 +42,7 @@ resource aws_subnet public {
     Name = "Public_${each.key}-${var.env}"
   }
   map_public_ip_on_launch = true
-  availability_zone = "${local.region}${local.Avilability_Zones[tonumber(each.key)]}"
+  availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
 
 resource aws_subnet private {
@@ -53,5 +53,5 @@ resource aws_subnet private {
     Name = "Private_${each.key}-${var.env}"
   }
   map_public_ip_on_launch = false
-  availability_zone = "${local.region}${local.Avilability_Zones[tonumber(each.key)]}"
+  availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
