@@ -71,7 +71,7 @@ resource aws_route_table public_subnet_route {
   }
 }
 
-resource "awscc_ec2_subnet_route_table_association" "public_subnets" {
+resource "aws_route_table_association" "public_subnets" {
   for_each = toset(["0", "1", "2"])
   route_table_id = aws_route_table.public_subnet_route.id
   subnet_id      = aws_subnet.private[tonumber(each.key)].id
