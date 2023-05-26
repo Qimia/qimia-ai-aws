@@ -1,24 +1,25 @@
 locals {
   VPC_CIDR = "10.254.0.0/16"
 
-  PublicSubnet1_CIDR = "10.254.0.0/24"
-  PublicSubnet2_CIDR = "10.254.1.0/24"
-  PublicSubnet3_CIDR = "10.254.2.0/24"
-
   PublicSubnets = [
-    local.PublicSubnet1_CIDR,
-    local.PublicSubnet2_CIDR,
-    local.PublicSubnet3_CIDR
+    "10.254.0.0/24",
+    "10.254.1.0/24",
+    "10.254.2.0/24",
   ]
 
-  PrivateSubnet1_CIDR = "10.254.128.0/24"
-  PrivateSubnet2_CIDR = "10.254.129.0/24"
-  PrivateSubnet3_CIDR = "10.254.130.0/24"
+  Avilability_Zones = [
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+  ]
 
   PrivateSubnets = [
-    local.PrivateSubnet1_CIDR,
-    local.PrivateSubnet2_CIDR,
-    local.PrivateSubnet3_CIDR,
+    "10.254.128.0/24",
+    "10.254.129.0/24",
+    "10.254.130.0/24"
   ]
 }
 
@@ -41,5 +42,5 @@ resource aws_subnet public {
     Name = "Public_${each.key}"
   }
   map_public_ip_on_launch = true
-  availability_zone = sort(data.aws_availability_zones.region.names)[tonumber(each.key)]
+  availability_zone = "${local.region}${local.PublicSubnets[tonumber(each.key)]}"
 }
