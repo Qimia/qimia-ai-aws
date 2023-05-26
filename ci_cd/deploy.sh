@@ -5,5 +5,6 @@ die () {
 [ "$#" -eq 1 ] || die "1 argument required, $# provided"
 source ci_cd/init_terraform.sh $1
 cd cloud-resources
-terraform apply -input=false ../plan-artifacts/$CI_ENVIRONMENT_NAME.tfplan
+export env=$1
+terraform apply -input=false ../plan-artifacts/$env.tfplan
 cd ..

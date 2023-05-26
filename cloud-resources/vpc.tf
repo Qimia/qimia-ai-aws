@@ -39,8 +39,19 @@ resource aws_subnet public {
   vpc_id = aws_vpc.the_vpc.id
   cidr_block = local.PublicSubnets[tonumber(each.key)]
   tags = {
-    Name = "Public_${each.key}"
+    Name = "Public_${each.key}-${var.env}"
   }
   map_public_ip_on_launch = true
-  availability_zone = "${local.region}${local.PublicSubnets[tonumber(each.key)]}"
+  availability_zone = "${local.region}${local.Avilability_Zones[tonumber(each.key)]}"
+}
+
+resource aws_subnet private {
+  for_each = toset(["0", "1", "2"])
+  vpc_id = aws_vpc.the_vpc.id
+  cidr_block = local.PrivateSubnets[tonumber(each.key)]
+  tags = {
+    Name = "Private_${each.key}-${var.env}"
+  }
+  map_public_ip_on_launch = false
+  availability_zone = "${local.region}${local.Avilability_Zones[tonumber(each.key)]}"
 }
