@@ -127,4 +127,14 @@ The Terraform templates to create the AWS resources are put here.
 
 
 # CI/CD pipeline
-The pipeline consists of three steps on AWS
+The pipeline consists of three steps.
+## version
+This stage gives a version ID to the deployment. 
+If the pipeline isn't merged to main yet, you'll get the commit ID as the version.
+Otherwise, semantic versioning will be used to set the current version.
+## plan
+The `plan` stages are environment specific. 
+Using Terraform templates under cloud-resources directory, the changes will be detected and exported to an output file.
+No changes will be applied to the AWS stack at this stage.
+## deploy
+The `deploy` stages are also environment specific but are triggered manually unlike the plan stages. 
