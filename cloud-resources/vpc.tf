@@ -63,10 +63,16 @@ resource aws_internet_gateway gateway {
   vpc_id = aws_vpc.the_vpc.id
 }
 
-resource aws_route_table public_subnet_routee {
+resource aws_route_table public_subnet_route {
   vpc_id = aws_vpc.the_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gateway.id
   }
+}
+
+resource "awscc_ec2_subnet_route_table_association" "public_subnets" {
+  for_each = toset(["0", "1", "2"])
+  route_table_id = aws_route_table.public_subnet_route.id
+  subnet_id      = aws_subnet.private[tonumber(each.key)].id
 }
