@@ -55,3 +55,18 @@ resource aws_subnet private {
   map_public_ip_on_launch = false
   availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
+
+resource aws_internet_gateway gateway {
+  tags = {
+    Name = "${var.env}-qimia-ai"
+  }
+  vpc_id = aws_vpc.the_vpc.id
+}
+
+resource aws_route_table public_subnet_routee {
+  vpc_id = aws_vpc.the_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gateway.id
+  }
+}
