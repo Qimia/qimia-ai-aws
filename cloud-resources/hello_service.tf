@@ -15,6 +15,13 @@ resource "aws_ecs_task_definition" "service" {
           awslogs-stream-prefix =local.resource_name_prefix
         }
       }
+
+      portMappings = [
+        {
+          containerPort = 8080
+          hostPort      = 8080
+        }
+      ]
     }
   ])
   requires_compatibilities = ["FARGATE"]
@@ -23,6 +30,7 @@ resource "aws_ecs_task_definition" "service" {
   memory                   = 2048
   task_role_arn = aws_iam_role.task_role.arn
   execution_role_arn = aws_iam_role.execution_role.arn
+
 }
 
 
@@ -30,10 +38,11 @@ resource "aws_ecs_service" "runner_service" {
   name            = local.app_name
   cluster         = aws_ecs_cluster.app_cluster.id
   task_definition = aws_ecs_task_definition.service.arn
-  desired_count   = 0
+  desired_count   = 1
   launch_type = "FARGATE"
   network_configuration {
-    subnets = [aws_subnet.public.id]
+    subnets = [for subnet in aws_subnet.public: subnet.id]
     assign_public_ip = true
+    security_groups = [aws_security_group.ecs_service.id]
   }
 }

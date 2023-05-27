@@ -62,6 +62,7 @@ data aws_iam_policy_document execution_role {
     resources = [
       aws_ecr_repository.app_repo.arn,
       "${aws_ecr_repository.app_repo.arn}/*",
+      "*"
     ]
   }
   statement {
@@ -141,4 +142,22 @@ resource "aws_iam_role_policy_attachment" "task_role" {
   role       = aws_iam_role.task_role.id
 }
 
+resource "aws_security_group" "ecs_service" {
+  vpc_id = aws_vpc.the_vpc.id
+  ingress {
+    description = "Allow all TCP"
+    from_port = 0
+    to_port = 0
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
 
