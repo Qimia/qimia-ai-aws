@@ -26,7 +26,7 @@ resource aws_security_group "lb" {
   egress {
     from_port        = 0
     to_port          = 0
-    protocol         = "-1"
+    protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
@@ -42,6 +42,7 @@ resource "aws_lb" "ecs" {
 resource "aws_lb_listener" "ecs_to_tg" {
   load_balancer_arn = aws_lb.ecs.arn
   port = 8080
+  protocol = "HTTP"
   default_action {
     type = "forward"
     target_group_arn = aws_lb_target_group.ecs.arn
@@ -148,7 +149,7 @@ resource "aws_security_group" "ecs_service" {
     description = "Allow all TCP"
     from_port = 0
     to_port = 0
-    protocol = "tcp"
+    protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
