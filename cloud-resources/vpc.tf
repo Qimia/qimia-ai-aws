@@ -56,6 +56,7 @@ resource aws_subnet private {
   availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
 
+#### Let's grant internet access to our public subnets
 resource aws_internet_gateway gateway {
   tags = {
     Name = "${var.env}-qimia-ai"
@@ -74,5 +75,6 @@ resource aws_route_table public_subnet_route {
 resource "aws_route_table_association" "public_subnets" {
   for_each = toset(["0", "1", "2"])
   route_table_id = aws_route_table.public_subnet_route.id
-  subnet_id      = aws_subnet.private[tonumber(each.key)].id
+  subnet_id      = aws_subnet.public[tonumber(each.key)].id
 }
+####
