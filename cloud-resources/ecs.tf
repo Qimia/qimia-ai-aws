@@ -1,5 +1,5 @@
 resource aws_ecs_cluster "app_cluster" {
-  name = "qimia-ai-${var.env}"
+  name = "${local.resource_name_prefix}"
   setting {
     name  = "containerInsights"
     value = "enabled"
@@ -78,7 +78,7 @@ resource "aws_iam_policy" "execution_role" {
 }
 
 resource "aws_iam_role" "execution_role" {
-  name = "qimia-ai-${var.env}-execution"
+  name = "${local.resource_name_prefix}-execution"
   assume_role_policy = jsonencode(
     {
       Version = "2012-10-17"
@@ -115,7 +115,7 @@ resource "aws_iam_policy" "task_role" {
 }
 
 resource "aws_iam_role" "task_role" {
-  name = "qimia-ai-${var.env}-task"
+  name = "${local.resource_name_prefix}-task"
   assume_role_policy = jsonencode(
     {
       Version = "2012-10-17"
@@ -132,7 +132,13 @@ resource "aws_iam_role" "task_role" {
   )
 }
 
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name = local.resource_name_prefix
+}
+
 resource "aws_iam_role_policy_attachment" "task_role" {
   policy_arn = aws_iam_policy.task_role.arn
   role       = aws_iam_role.task_role.id
 }
+
+

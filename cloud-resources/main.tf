@@ -11,6 +11,8 @@ terraform {
 
 locals {
   region = "eu-central-1"
+  app_name = "qimia-ai-${var.env}"
+  resource_name_prefix = local.app_name
 }
 
 terraform {

@@ -1,0 +1,39 @@
+resource "aws_ecs_task_definition" "service" {
+  family = "${local.resource_name_prefix}-task"
+  container_definitions = jsonencode([
+    {
+      name      = "${local.resource_name_prefix}-task"
+      image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:27012022"
+      cpu       = 256
+      memory    = 2048
+      essential = true
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group = aws_cloudwatch_log_group.ecs_logs.name
+          awslogs-region = local.region
+          awslogs-stream-prefix =local.resource_name_prefix
+        }
+      }
+    }
+  ])
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = 256
+  memory                   = 2048
+  task_role_arn = aws_iam_role.task_role.arn
+  execution_role_arn = aws_iam_role.execution_role.arn
+}
+
+
+resource "aws_ecs_service" "runner_service" {
+  name            = local.app_name
+  cluster         = aws_ecs_cluster.app_cluster.id
+  task_definition = aws_ecs_task_definition.service.arn
+  desired_count   = 0
+  launch_type = "FARGATE"
+  network_configuration {
+    subnets = [aws_subnet.public.id]
+    assign_public_ip = true
+  }
+}

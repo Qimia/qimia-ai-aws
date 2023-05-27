@@ -59,7 +59,7 @@ resource aws_subnet private {
 #### Let's grant internet access to our public subnets
 resource aws_internet_gateway gateway {
   tags = {
-    Name = "${var.env}-qimia-ai"
+    Name = "${local.resource_name_prefix}"
   }
   vpc_id = aws_vpc.the_vpc.id
 }
