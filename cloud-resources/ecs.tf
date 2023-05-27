@@ -40,6 +40,7 @@ resource "aws_lb_listener" "ecs_to_tg" {
   port = 8080
   default_action {
     type = "forward"
+    target_group_arn = aws_lb_target_group.ecs.arn
   }
 }
 
