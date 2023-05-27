@@ -100,4 +100,39 @@ resource "aws_iam_role_policy_attachment" "execution_role" {
   role       = aws_iam_role.execution_role.id
 }
 
-### Definition of ECS
+### Definition of ECS task role, with this role, the app runbning inside the docker container is authorized to use the AWS API.
+data aws_iam_policy_document task_role {
+  statement {
+    actions = [
+    ]
+    resources = [
+    ]
+  }
+}
+
+resource "aws_iam_policy" "task_role" {
+  policy = data.aws_iam_policy_document.execution_role.json
+}
+
+resource "aws_iam_role" "task_role" {
+  name = "qimia-ai-${var.env}-task"
+  assume_role_policy = jsonencode(
+    {
+      Version = "2012-10-17"
+      Statement = [
+        {
+          Action = "sts:AssumeRole"
+          Effect = "Allow"
+          Principal = {
+            Service = "ecs-tasks.amazonaws.com"
+          }
+        }
+      ]
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "task_role" {
+  policy_arn = aws_iam_policy.task_role.arn
+  role       = aws_iam_role.task_role.id
+}
