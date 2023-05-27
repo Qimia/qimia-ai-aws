@@ -1,5 +1,9 @@
 resource aws_ecs_cluster "app_cluster" {
   name = "qimia-ai-${var.env}"
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 resource "aws_lb_target_group" "ecs" {
