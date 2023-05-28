@@ -64,6 +64,9 @@ resource "aws_lb_listener" "ecs_to_tg" {
 
 ### Definition of the ECS Execution Role
 ### This is the role attached to the ECS cluster that allows it to do cluster management tasks such as pulling images from ECS etc.
+data aws_ecr_repository tempimage{
+  name = "abdullahrepo"
+}
 
 data aws_iam_policy_document execution_role {
   statement {
@@ -75,8 +78,8 @@ data aws_iam_policy_document execution_role {
     ]
     resources = [
       aws_ecr_repository.app_repo.arn,
-      "${aws_ecr_repository.app_repo.arn}/*",
-      "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:asdqwe"
+      "${aws_ecr_repository.app_repo.arn}:*",
+      "${data.aws_ecr_repository.tempimage.arn}:asdqwe"
     ]
   }
   statement {
