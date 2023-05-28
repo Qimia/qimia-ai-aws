@@ -71,13 +71,12 @@ data aws_iam_policy_document execution_role {
       "ecr:GetAuthorizationToken",
       "ecr:BatchCheckLayerAvailability",
       "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchGetImage",
-      "*"
+      "ecr:BatchGetImage"
     ]
     resources = [
       aws_ecr_repository.app_repo.arn,
       "${aws_ecr_repository.app_repo.arn}/*",
-      "*"
+      "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:asdqwe"
     ]
   }
   statement {
@@ -85,7 +84,9 @@ data aws_iam_policy_document execution_role {
       "logs:CreateLogStream",
       "logs:PutLogEvents"
     ]
-    resources = ["*"]
+    resources = [
+      "arn:aws:logs:eu-central-1:${local.account_id}:log-group:/aws/ecs/containerinsights/qimia-ai-dev/performance:*"
+    ]
   }
 }
 
@@ -177,3 +178,8 @@ resource "aws_security_group" "ecs_service" {
   }
 }
 
+resource "aws_ssm_parameter" "cluster_name" {
+  name = "/${local.resource_name_prefix}/ecs_cluster_name/${var.env}"
+  type = "String"
+  value = aws_lb.ecs.dns_name
+}
