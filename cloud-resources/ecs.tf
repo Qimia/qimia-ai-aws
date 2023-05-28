@@ -65,6 +65,7 @@ data aws_iam_policy_document execution_role {
       "ecr:BatchCheckLayerAvailability",
       "ecr:GetDownloadUrlForLayer",
       "ecr:BatchGetImage",
+      "*"
     ]
     resources = [
       aws_ecr_repository.app_repo.arn,
