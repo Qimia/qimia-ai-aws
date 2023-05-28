@@ -11,6 +11,11 @@ resource "aws_lb_target_group" "ecs" {
   protocol = "HTTP"
   target_type = "ip"
   vpc_id = aws_vpc.the_vpc.id
+  health_check {
+    path = "/hello"
+    port = "8080"
+    protocol = "HTTP"
+  }
 }
 
 resource aws_security_group "lb" {
@@ -19,14 +24,15 @@ resource aws_security_group "lb" {
     description = "Allow all TCP"
     from_port = 0
     to_port = 0
-    protocol = "tcp"
+    protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
     from_port        = 0
     to_port          = 0
-    protocol         = "tcp"
+    protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
@@ -151,6 +157,7 @@ resource "aws_security_group" "ecs_service" {
     to_port = 0
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {

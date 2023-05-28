@@ -3,7 +3,7 @@ resource "aws_ecs_task_definition" "service" {
   container_definitions = jsonencode([
     {
       name      = "${local.resource_name_prefix}-task"
-      image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:27012022"
+      image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:asdqwe"
       cpu       = 256
       memory    = 2048
       essential = true
