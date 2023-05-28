@@ -71,7 +71,12 @@ data aws_ecr_repository tempimage{
 data aws_iam_policy_document execution_role {
   statement {
     actions = [
-      "ecr:GetAuthorizationToken",
+      "ecr:GetAuthorizationToken"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:GetDownloadUrlForLayer",
       "ecr:BatchGetImage"
@@ -79,7 +84,7 @@ data aws_iam_policy_document execution_role {
     resources = [
       aws_ecr_repository.app_repo.arn,
       "${aws_ecr_repository.app_repo.arn}:*",
-      "${data.aws_ecr_repository.tempimage.arn}:asdqwe"
+      "*"
     ]
   }
   statement {
@@ -88,7 +93,7 @@ data aws_iam_policy_document execution_role {
       "logs:PutLogEvents"
     ]
     resources = [
-      "arn:aws:logs:eu-central-1:${local.account_id}:log-group:/aws/ecs/containerinsights/qimia-ai-dev/performance:*"
+      "*"
     ]
   }
 }
@@ -124,14 +129,16 @@ resource "aws_iam_role_policy_attachment" "execution_role" {
 data aws_iam_policy_document task_role {
   statement {
     actions = [
+      "ssm:GetParameter"
     ]
     resources = [
+      "arn:aws:ssm:${local.region}:${local.account_id}:parameter${data.aws_ssm_parameters_by_path.parameters.path}*"
     ]
   }
 }
 
 resource "aws_iam_policy" "task_role" {
-  policy = data.aws_iam_policy_document.execution_role.json
+  policy = data.aws_iam_policy_document.task_role.json
 }
 
 resource "aws_iam_role" "task_role" {
@@ -181,8 +188,12 @@ resource "aws_security_group" "ecs_service" {
   }
 }
 
+data aws_ssm_parameters_by_path parameters {
+  path = "/${local.resource_name_prefix}/"
+}
+
 resource "aws_ssm_parameter" "cluster_name" {
-  name = "/${local.resource_name_prefix}/ecs_cluster_name/${var.env}"
+  name = "${data.aws_ssm_parameters_by_path.parameters.path}ecs_cluster_name"
   type = "String"
   value = aws_lb.ecs.dns_name
 }
