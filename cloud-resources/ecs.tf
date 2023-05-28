@@ -1,5 +1,5 @@
 resource aws_ecs_cluster "app_cluster" {
-  name = "${local.resource_name_prefix}"
+  name = local.app_name
   setting {
     name  = "containerInsights"
     value = "enabled"
@@ -15,6 +15,12 @@ resource "aws_lb_target_group" "ecs" {
     path = "/hello"
     port = "8080"
     protocol = "HTTP"
+    interval = 120
+  }
+  slow_start = 120
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
@@ -53,6 +59,7 @@ resource "aws_lb_listener" "ecs_to_tg" {
     type = "forward"
     target_group_arn = aws_lb_target_group.ecs.arn
   }
+  depends_on = [aws_lb_target_group.ecs]
 }
 
 ### Definition of the ECS Execution Role

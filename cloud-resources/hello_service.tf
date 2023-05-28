@@ -40,9 +40,18 @@ resource "aws_ecs_service" "runner_service" {
   task_definition = aws_ecs_task_definition.service.arn
   desired_count   = 1
   launch_type = "FARGATE"
+
   network_configuration {
     subnets = [for subnet in aws_subnet.public: subnet.id]
     assign_public_ip = true
     security_groups = [aws_security_group.ecs_service.id]
   }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs.arn
+    container_name   = "${local.resource_name_prefix}-task"
+    container_port   = 8080
+  }
+
+  health_check_grace_period_seconds = 120
 }
