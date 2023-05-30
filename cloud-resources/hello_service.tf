@@ -3,10 +3,16 @@ resource "aws_ecs_task_definition" "service" {
   container_definitions = jsonencode([
     {
       name      = "${local.resource_name_prefix}-task"
-      image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/abdullahrepo:asdqwe"
-      cpu       = 256
-      memory    = 2048
+      image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/qimia-ai-dev:latest"
+      cpu       = 2048
+      memory    = 1024 * 12
       essential = true
+      environment = [
+        {
+          name="S3_MODEL_PATH",
+          value= "s3://${data.aws_s3_object.model_binary.id}"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -18,16 +24,16 @@ resource "aws_ecs_task_definition" "service" {
 
       portMappings = [
         {
-          containerPort = 8080
-          hostPort      = 8080
+          containerPort = 8000
+          hostPort      = 8000
         }
       ]
     }
   ])
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 256
-  memory                   = 2048
+  cpu                      = 2048
+  memory                   = 1024 * 12
   task_role_arn = aws_iam_role.task_role.arn
   execution_role_arn = aws_iam_role.execution_role.arn
 
@@ -50,7 +56,7 @@ resource "aws_ecs_service" "runner_service" {
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs.arn
     container_name   = "${local.resource_name_prefix}-task"
-    container_port   = 8080
+    container_port   = 8000
   }
 
   health_check_grace_period_seconds = 120

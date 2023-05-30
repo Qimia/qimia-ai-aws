@@ -7,13 +7,13 @@ resource aws_ecs_cluster "app_cluster" {
 }
 
 resource "aws_lb_target_group" "ecs" {
-  port = 8080
+  port = 8000
   protocol = "HTTP"
   target_type = "ip"
   vpc_id = aws_vpc.the_vpc.id
   health_check {
-    path = "/hello"
-    port = "8080"
+    path = "/v1/health"
+    port = "8000"
     protocol = "HTTP"
     interval = 120
   }
@@ -53,7 +53,7 @@ resource "aws_lb" "ecs" {
 
 resource "aws_lb_listener" "ecs_to_tg" {
   load_balancer_arn = aws_lb.ecs.arn
-  port = 8080
+  port = 8000
   protocol = "HTTP"
   default_action {
     type = "forward"
@@ -135,6 +135,15 @@ data aws_iam_policy_document task_role {
       "arn:aws:ssm:${local.region}:${local.account_id}:parameter${data.aws_ssm_parameters_by_path.parameters.path}*"
     ]
   }
+  statement {
+    actions = [
+      "s3:*"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.model_bucket.arn}",
+      "${data.aws_s3_bucket.model_bucket.arn}/*"
+    ]
+  }
 }
 
 resource "aws_iam_policy" "task_role" {
@@ -160,7 +169,7 @@ resource "aws_iam_role" "task_role" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name = local.resource_name_prefix
+  name = local.app_name
 }
 
 resource "aws_iam_role_policy_attachment" "task_role" {
@@ -171,12 +180,11 @@ resource "aws_iam_role_policy_attachment" "task_role" {
 resource "aws_security_group" "ecs_service" {
   vpc_id = aws_vpc.the_vpc.id
   ingress {
-    description = "Allow all TCP"
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    description = "Allow the Load Balancer"
+    from_port = 8000
+    to_port = 8000
+    protocol = "tcp"
+    security_groups = [aws_security_group.lb.id]
   }
 
   egress {
@@ -189,7 +197,7 @@ resource "aws_security_group" "ecs_service" {
 }
 
 data aws_ssm_parameters_by_path parameters {
-  path = "/${local.resource_name_prefix}/"
+  path = "/${local.app_name}/"
 }
 
 resource "aws_ssm_parameter" "cluster_name" {
