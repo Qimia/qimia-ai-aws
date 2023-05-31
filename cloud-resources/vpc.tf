@@ -23,7 +23,7 @@ locals {
   ]
 }
 
-data aws_availability_zones region {
+data "aws_availability_zones" "region" {
   all_availability_zones = true
 }
 
@@ -34,37 +34,37 @@ resource "aws_vpc" "the_vpc" {
   }
 }
 
-resource aws_subnet public {
-  for_each = toset(["0", "1", "2"])
-  vpc_id = aws_vpc.the_vpc.id
+resource "aws_subnet" "public" {
+  for_each   = toset(["0", "1", "2"])
+  vpc_id     = aws_vpc.the_vpc.id
   cidr_block = local.PublicSubnets[tonumber(each.key)]
   tags = {
     Name = "Public_${each.key}-${var.env}"
   }
   map_public_ip_on_launch = true
-  availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
+  availability_zone       = "${var.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
 
-resource aws_subnet private {
-  for_each = toset(["0", "1", "2"])
-  vpc_id = aws_vpc.the_vpc.id
+resource "aws_subnet" "private" {
+  for_each   = toset(["0", "1", "2"])
+  vpc_id     = aws_vpc.the_vpc.id
   cidr_block = local.PrivateSubnets[tonumber(each.key)]
   tags = {
     Name = "Private_${each.key}-${var.env}"
   }
   map_public_ip_on_launch = false
-  availability_zone = "${local.region}${local.Availability_Zones[tonumber(each.key)]}"
+  availability_zone       = "${var.region}${local.Availability_Zones[tonumber(each.key)]}"
 }
 
 #### Let's grant internet access to our public subnets
-resource aws_internet_gateway gateway {
+resource "aws_internet_gateway" "gateway" {
   tags = {
     Name = local.app_name
   }
   vpc_id = aws_vpc.the_vpc.id
 }
 
-resource aws_route_table public_subnet_route {
+resource "aws_route_table" "public_subnet_route" {
   vpc_id = aws_vpc.the_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
@@ -73,7 +73,7 @@ resource aws_route_table public_subnet_route {
 }
 
 resource "aws_route_table_association" "public_subnets" {
-  for_each = toset(["0", "1", "2"])
+  for_each       = toset(["0", "1", "2"])
   route_table_id = aws_route_table.public_subnet_route.id
   subnet_id      = aws_subnet.public[tonumber(each.key)].id
 }
