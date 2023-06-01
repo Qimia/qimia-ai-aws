@@ -10,14 +10,6 @@ variable "env" {
   type        = string
   default     = "dev"
 }
-
-# AWS Provider Variables
-variable "profile" {
-  description = "AWS CLI Profile"
-  type        = string
-  default     = "default"
-}
-
 variable "account" {
   description = "AWS Account ID"
   type        = number
