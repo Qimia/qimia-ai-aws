@@ -3,10 +3,12 @@ die () {
     exit 1
 }
 [ "$#" -eq 1 ] || die "1 argument required, $# provided"
-source ci_cd/init_terraform.sh $1
+env="$1"
+
+source ci_cd/init_terraform.sh $env
 mkdir -p plan-artifacts
 cd cloud-resources
-export TF_VAR_env="$1"
+export TF_VAR_env="$env"
 terraform --version
-terraform plan -out="../plan-artifacts/$1.tfplan"
+terraform plan -out="../plan-artifacts/$env.tfplan"
 cd ..

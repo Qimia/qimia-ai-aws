@@ -59,6 +59,8 @@ version:
 
 plan-dev:
   extends: .plan
+  variables:
+    TF_VAR_account: 906856305748
   environment:
     name: dev
   <<: *dev-tags
