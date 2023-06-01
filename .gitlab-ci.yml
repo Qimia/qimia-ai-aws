@@ -51,6 +51,7 @@ version:
   needs:
     - version
   script:
+    - aws configure list-profiles
     - source ci_cd/plan.sh $ENV
   artifacts:
     expire_in: 7 days
