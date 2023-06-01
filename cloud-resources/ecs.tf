@@ -180,11 +180,12 @@ resource "aws_iam_role_policy_attachment" "task_role" {
 resource "aws_security_group" "ecs_service" {
   vpc_id = aws_vpc.the_vpc.id
   ingress {
-    description     = "Allow the Load Balancer"
-    from_port       = 8000
-    to_port         = 8000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lb.id]
+    description      = "Allow all TCP"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
