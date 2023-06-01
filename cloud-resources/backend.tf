@@ -1,5 +1,5 @@
 terraform {
   backend "s3" {
-    key = "terraform/state/terraform.tfstate"
+    key = "terraform/state/infra.tfstate"
   }
 }
