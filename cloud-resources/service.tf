@@ -1,6 +1,3 @@
-# Everything here's for testing purpose.
-# TODO All will either be moved to the llama-cpp-python-qimia repo as it is or converted to shell scripts.
-
 resource "aws_ecs_task_definition" "service" {
   family = "${local.app_name}-task"
   container_definitions = jsonencode([

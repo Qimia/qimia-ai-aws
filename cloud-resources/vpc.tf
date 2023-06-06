@@ -23,9 +23,6 @@ locals {
   ]
 }
 
-data "aws_availability_zones" "region" {
-  all_availability_zones = true
-}
 
 resource "aws_vpc" "the_vpc" {
   cidr_block = local.VPC_CIDR

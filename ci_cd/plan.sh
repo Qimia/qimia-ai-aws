@@ -10,5 +10,5 @@ mkdir -p plan-artifacts
 cd cloud-resources
 export TF_VAR_env="$env"
 terraform --version
-terraform plan -out="../plan-artifacts/$env.tfplan"
+terraform plan -out="../plan-artifacts/$env.tfplan" -var-file="$env.tfvars"
 cd ..
