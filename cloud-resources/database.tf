@@ -44,7 +44,7 @@ resource "aws_rds_cluster" "postgres" {
   count                     = var.create_shared_resources ? 1 : 0
   cluster_identifier        = local.app_name
   availability_zones        = [for zone_letter in ["a", "b", "c"] : "${var.region}${zone_letter}"]
-  database_name             = "main"
+  database_name             = "test_db"
   master_username           = "postgres"
   master_password           = random_password.postgres_master_password.result
   engine                    = "aurora-postgresql"
@@ -60,10 +60,17 @@ resource "aws_rds_cluster" "postgres" {
   }
 }
 
+resource "aws_rds_cluster_endpoint" "custom" {
+  count         = var.create_shared_resources ? 1 : 0
+  cluster_endpoint_identifier = local.app_name
+  cluster_identifier          = aws_rds_cluster.postgres[0].id
+  custom_endpoint_type        = "ANY"
+}
+
 ## The master username for postgres
 resource "aws_secretsmanager_secret" "postgres_master_username" {
   count = var.create_shared_resources ? 1 : 0
-  name  = "${local.secret_resource_prefix}/database_master_username"
+  name  = "${local.secret_resource_prefix}database_master_username"
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_master_username" {
@@ -76,7 +83,7 @@ resource "aws_secretsmanager_secret_version" "postgres_master_username" {
 ## The master password for postgres
 resource "aws_secretsmanager_secret" "postgres_master_password" {
   count = var.create_shared_resources ? 1 : 0
-  name  = "${local.secret_resource_prefix}/database_master_password"
+  name  = "${local.secret_resource_prefix}database_master_password"
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_master_password" {
@@ -85,4 +92,17 @@ resource "aws_secretsmanager_secret_version" "postgres_master_password" {
   secret_string = aws_rds_cluster.postgres[0].master_password
 }
 
+
+
+## The master password for postgres
+resource "aws_secretsmanager_secret" "postgres_host" {
+  count = var.create_shared_resources ? 1 : 0
+  name  = "${local.secret_resource_prefix}postgres_host"
+}
+
+resource "aws_secretsmanager_secret_version" "postgres_host" {
+  count         = var.create_shared_resources ? 1 : 0
+  secret_id     = aws_secretsmanager_secret.postgres_host[0].id
+  secret_string = "${aws_rds_cluster_endpoint.custom[0].endpoint}:5432"
+}
 
