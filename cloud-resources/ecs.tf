@@ -132,7 +132,8 @@ data "aws_iam_policy_document" "task_role" {
       "ssm:GetParameter"
     ]
     resources = [
-      "arn:aws:ssm:${var.region}:${var.account}:parameter${data.aws_ssm_parameters_by_path.parameters.path}*"
+      "arn:aws:ssm:${var.region}:${var.account}:parameter${data.aws_ssm_parameters_by_path.parameters.path}*",
+      "arn:aws:ssm:${var.region}:${var.account}:parameter*"
     ]
   }
   statement {
