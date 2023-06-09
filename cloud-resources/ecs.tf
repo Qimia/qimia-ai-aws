@@ -129,13 +129,25 @@ resource "aws_iam_role_policy_attachment" "execution_role" {
 data "aws_iam_policy_document" "task_role" {
   statement {
     actions = [
-      "ssm:GetParameter"
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:ListSecrets",
     ]
     resources = [
-      "arn:aws:ssm:${var.region}:${var.account}:parameter${data.aws_ssm_parameters_by_path.parameters.path}*",
-      "arn:aws:ssm:${var.region}:${var.account}:parameter*"
+      "arn:aws:secretsmanager:${var.region}:${var.account}:secret:${local.secret_resource_prefix}*",
     ]
   }
+
+  statement  {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    resources= ["*"]
+  }
+
   statement {
     actions = [
       "s3:*"
@@ -205,5 +217,18 @@ data "aws_ssm_parameters_by_path" "parameters" {
 resource "aws_ssm_parameter" "cluster_name" {
   name  = "${data.aws_ssm_parameters_by_path.parameters.path}ecs_cluster_name"
   type  = "String"
+  value = aws_lb.ecs.dns_name
+}
+
+resource "aws_secretsmanager_secret" "lb_url" {
+  name = "${local.secret_resource_prefix}api_url"
+}
+
+resource "aws_secretsmanager_secret_version" "lb_url" {
+  secret_id = aws_secretsmanager_secret.lb_url.id
+  secret_string = "${aws_lb.ecs.dns_name}:8000"
+}
+
+output "load_balancer_url" {
   value = aws_lb.ecs.dns_name
 }

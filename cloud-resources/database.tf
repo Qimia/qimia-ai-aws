@@ -5,6 +5,7 @@ resource "random_password" "postgres_master_password" {
 
 resource "aws_db_subnet_group" "postgres" {
   count      = var.create_shared_resources ? 1 : 0
+  name_prefix = "qimia-ai-${var.env}"
   subnet_ids = [for subnet in aws_subnet.private : subnet.id]
 }
 
@@ -40,31 +41,36 @@ resource "random_id" "snapshot_identifier" {
   byte_length = 4
 }
 
+
 resource "aws_rds_cluster" "postgres" {
   count                     = var.create_shared_resources ? 1 : 0
-  cluster_identifier        = local.app_name
+  cluster_identifier        = "${local.app_name}-db"
   availability_zones        = [for zone_letter in ["a", "b", "c"] : "${var.region}${zone_letter}"]
   database_name             = "test_db"
   master_username           = "postgres"
   master_password           = random_password.postgres_master_password.result
   engine                    = "aurora-postgresql"
-  engine_mode               = "provisioned"
   engine_version            = "14.7"
   db_subnet_group_name      = aws_db_subnet_group.postgres[0].name
   vpc_security_group_ids    = [aws_security_group.allow_tls[0].id]
   final_snapshot_identifier = "${local.app_name}-${random_id.snapshot_identifier.id}"
 
-  serverlessv2_scaling_configuration {
-    max_capacity = 1.0
-    min_capacity = 0.5
-  }
 }
 
-resource "aws_rds_cluster_endpoint" "custom" {
-  count         = var.create_shared_resources ? 1 : 0
-  cluster_endpoint_identifier = local.app_name
-  cluster_identifier          = aws_rds_cluster.postgres[0].id
-  custom_endpoint_type        = "ANY"
+resource "aws_rds_cluster_instance" "writer" {
+  cluster_identifier = aws_rds_cluster.postgres[0].cluster_identifier
+  instance_class     = "db.t3.medium"
+  publicly_accessible = false
+  engine =  aws_rds_cluster.postgres[0].engine
+  engine_version =  aws_rds_cluster.postgres[0].engine_version
+}
+
+resource "aws_rds_cluster_instance" "reader" {
+  cluster_identifier = aws_rds_cluster.postgres[0].cluster_identifier
+  instance_class     = "db.t3.medium"
+  publicly_accessible = false
+  engine =  aws_rds_cluster.postgres[0].engine
+  engine_version =  aws_rds_cluster.postgres[0].engine_version
 }
 
 ## The master username for postgres
@@ -103,6 +109,5 @@ resource "aws_secretsmanager_secret" "postgres_host" {
 resource "aws_secretsmanager_secret_version" "postgres_host" {
   count         = var.create_shared_resources ? 1 : 0
   secret_id     = aws_secretsmanager_secret.postgres_host[0].id
-  secret_string = "${aws_rds_cluster_endpoint.custom[0].endpoint}:5432"
+  secret_string = "${aws_rds_cluster.postgres[0].endpoint}:5432"
 }
-
