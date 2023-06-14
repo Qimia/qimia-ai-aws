@@ -256,7 +256,7 @@ resource "aws_secretsmanager_secret" "frontend_url" {
 }
 
 resource "aws_secretsmanager_secret_version" "frontend_url" {
-  secret_id = aws_secretsmanager_secret.lb_url.id
+  secret_id = aws_secretsmanager_secret.frontend_url.id
   secret_string = "${aws_lb.ecs.dns_name}:3000"
 }
 
