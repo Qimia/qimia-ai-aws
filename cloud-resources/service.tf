@@ -36,10 +36,6 @@ resource "aws_ecs_task_definition" "service" {
       essential = true
       environment = [
         {
-          name  = "S3_MODEL_PATH",
-          value = "http://${aws_secretsmanager_secret_version.lb_url.secret_string}"
-        },
-        {
           name  = "ENV",
           value = var.env
         }

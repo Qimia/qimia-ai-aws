@@ -251,6 +251,15 @@ resource "aws_secretsmanager_secret_version" "lb_url" {
   secret_string = "${aws_lb.ecs.dns_name}:8000"
 }
 
+resource "aws_secretsmanager_secret" "frontend_url" {
+  name = "${local.secret_resource_prefix}frontend_url"
+}
+
+resource "aws_secretsmanager_secret_version" "frontend_url" {
+  secret_id = aws_secretsmanager_secret.lb_url.id
+  secret_string = "${aws_lb.ecs.dns_name}:3000"
+}
+
 output "load_balancer_url" {
   value = aws_lb.ecs.dns_name
 }
