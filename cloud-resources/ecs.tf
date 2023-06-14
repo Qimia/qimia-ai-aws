@@ -24,6 +24,17 @@ resource "aws_lb_target_group" "ecs" {
   }
 }
 
+resource "aws_lb_target_group" "frontend" {
+  port        = 3000
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = aws_vpc.the_vpc.id
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_security_group" "lb" {
   vpc_id = aws_vpc.the_vpc.id
   ingress {
@@ -60,6 +71,17 @@ resource "aws_lb_listener" "ecs_to_tg" {
     target_group_arn = aws_lb_target_group.ecs.arn
   }
   depends_on = [aws_lb_target_group.ecs]
+}
+
+resource "aws_lb_listener" "frontend_tg" {
+  load_balancer_arn = aws_lb.ecs.arn
+  port              = 3000
+  protocol          = "HTTP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+  depends_on = [aws_lb_target_group.frontend]
 }
 
 ### Definition of the ECS Execution Role
