@@ -73,6 +73,17 @@ resource "aws_lb_listener" "ecs_to_tg" {
   depends_on = [aws_lb_target_group.ecs]
 }
 
+resource "aws_lb_listener" "http_to_frontend" {
+  load_balancer_arn = aws_lb.ecs.arn
+  port              = 80
+  protocol          = "HTTP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+  depends_on = [aws_lb_target_group.frontend]
+}
+
 resource "aws_lb_listener" "frontend_tg" {
   load_balancer_arn = aws_lb.ecs.arn
   port              = 3000
