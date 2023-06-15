@@ -5,7 +5,7 @@ resource "aws_ecs_task_definition" "service" {
       name      = "${local.app_name}-task"
       image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/qimia-ai-dev:latest"
       cpu       = 1024
-      memory    = 1024 * 6
+      memory    = 1024 * 2
       essential = true
       environment = [
         {
@@ -32,7 +32,7 @@ resource "aws_ecs_task_definition" "service" {
       name      = "${local.app_name}-frontend-task"
       image     = "${aws_ecr_repository.frontend_repo.repository_url}:latest"
       cpu       = 1024
-      memory    = 1024 * 6
+      memory    = 1024 * 10
       essential = true
       environment = [
         {
