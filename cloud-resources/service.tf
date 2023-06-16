@@ -4,8 +4,8 @@ resource "aws_ecs_task_definition" "service" {
     {
       name      = "${local.app_name}-task"
       image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/qimia-ai-dev:latest"
-      cpu       = 1024
-      memory    = 1024 * 2
+      cpu       = 1792
+      memory    = 1024 * 10
       essential = true
       environment = [
         {
@@ -28,11 +28,11 @@ resource "aws_ecs_task_definition" "service" {
           hostPort      = 8000
         }
       ]
-    },{
+      }, {
       name      = "${local.app_name}-frontend-task"
       image     = "${aws_ecr_repository.frontend_repo.repository_url}:latest"
-      cpu       = 1024
-      memory    = 1024 * 10
+      cpu       = 256
+      memory    = 1024 * 2
       essential = true
       environment = [
         {
@@ -72,11 +72,11 @@ resource "aws_ecs_task_definition" "service" {
 
 
 resource "aws_ecs_service" "runner_service" {
-  name            = local.app_name
-  cluster         = aws_ecs_cluster.app_cluster.id
-  task_definition = aws_ecs_task_definition.service.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                   = local.app_name
+  cluster                = aws_ecs_cluster.app_cluster.id
+  task_definition        = aws_ecs_task_definition.service.arn
+  desired_count          = 1
+  launch_type            = "FARGATE"
   enable_execute_command = true
 
   network_configuration {

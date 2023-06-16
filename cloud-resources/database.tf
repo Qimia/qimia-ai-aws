@@ -4,9 +4,9 @@ resource "random_password" "postgres_master_password" {
 }
 
 resource "aws_db_subnet_group" "postgres" {
-  count      = var.create_shared_resources ? 1 : 0
+  count       = var.create_shared_resources ? 1 : 0
   name_prefix = "qimia-ai-${var.env}"
-  subnet_ids = [for subnet in aws_subnet.private : subnet.id]
+  subnet_ids  = [for subnet in aws_subnet.private : subnet.id]
 }
 
 
@@ -58,19 +58,19 @@ resource "aws_rds_cluster" "postgres" {
 }
 
 resource "aws_rds_cluster_instance" "writer" {
-  cluster_identifier = aws_rds_cluster.postgres[0].cluster_identifier
-  instance_class     = "db.t3.medium"
+  cluster_identifier  = aws_rds_cluster.postgres[0].cluster_identifier
+  instance_class      = "db.t3.medium"
   publicly_accessible = false
-  engine =  aws_rds_cluster.postgres[0].engine
-  engine_version =  aws_rds_cluster.postgres[0].engine_version
+  engine              = aws_rds_cluster.postgres[0].engine
+  engine_version      = aws_rds_cluster.postgres[0].engine_version
 }
 
 resource "aws_rds_cluster_instance" "reader" {
-  cluster_identifier = aws_rds_cluster.postgres[0].cluster_identifier
-  instance_class     = "db.t3.medium"
+  cluster_identifier  = aws_rds_cluster.postgres[0].cluster_identifier
+  instance_class      = "db.t3.medium"
   publicly_accessible = false
-  engine =  aws_rds_cluster.postgres[0].engine
-  engine_version =  aws_rds_cluster.postgres[0].engine_version
+  engine              = aws_rds_cluster.postgres[0].engine
+  engine_version      = aws_rds_cluster.postgres[0].engine_version
 }
 
 ## The master username for postgres

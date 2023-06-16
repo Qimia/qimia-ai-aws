@@ -1,3 +1,7 @@
+data "aws_acm_certificate" "qimiaai" {
+  domain = "qimiaai.com"
+}
+
 resource "aws_ecs_cluster" "app_cluster" {
   name = local.app_name
   setting {
@@ -73,6 +77,43 @@ resource "aws_lb_listener" "ecs_to_tg" {
   depends_on = [aws_lb_target_group.ecs]
 }
 
+resource "aws_lb_listener" "https_to_backend" {
+  load_balancer_arn = aws_lb.ecs.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = data.aws_acm_certificate.qimiaai.arn
+  depends_on        = [aws_lb_target_group.ecs]
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Fixed response content"
+      status_code  = "200"
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "https_to_backend" {
+  listener_arn = aws_lb_listener.https_to_backend.arn
+  priority     = 99
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs.arn
+  }
+
+  condition {
+    host_header {
+      values = ["api.${local.env_domain_name}"]
+    }
+  }
+}
+
+
+
+
+
 resource "aws_lb_listener" "http_to_frontend" {
   load_balancer_arn = aws_lb.ecs.arn
   port              = 80
@@ -83,6 +124,42 @@ resource "aws_lb_listener" "http_to_frontend" {
   }
   depends_on = [aws_lb_target_group.frontend]
 }
+
+
+resource "aws_lb_listener" "https_to_frontend" {
+  load_balancer_arn = aws_lb.ecs.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = data.aws_acm_certificate.qimiaai.arn
+  depends_on        = [aws_lb_target_group.frontend]
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Fixed response content"
+      status_code  = "200"
+    }
+  }
+}
+
+resource "aws_lb_listener_rule" "https_to_frontend" {
+  listener_arn = aws_lb_listener.https_to_frontend.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+
+  condition {
+    host_header {
+      values = ["chat.${local.env_domain_name}"]
+    }
+  }
+}
+
+
 
 resource "aws_lb_listener" "frontend_tg" {
   load_balancer_arn = aws_lb.ecs.arn
@@ -171,14 +248,14 @@ data "aws_iam_policy_document" "task_role" {
     ]
   }
 
-  statement  {
+  statement {
     actions = [
       "ssmmessages:CreateControlChannel",
       "ssmmessages:CreateDataChannel",
       "ssmmessages:OpenControlChannel",
       "ssmmessages:OpenDataChannel"
     ]
-    resources= ["*"]
+    resources = ["*"]
   }
 
   statement {
@@ -258,7 +335,7 @@ resource "aws_secretsmanager_secret" "lb_url" {
 }
 
 resource "aws_secretsmanager_secret_version" "lb_url" {
-  secret_id = aws_secretsmanager_secret.lb_url.id
+  secret_id     = aws_secretsmanager_secret.lb_url.id
   secret_string = "${aws_lb.ecs.dns_name}:8000"
 }
 
@@ -267,7 +344,7 @@ resource "aws_secretsmanager_secret" "frontend_url" {
 }
 
 resource "aws_secretsmanager_secret_version" "frontend_url" {
-  secret_id = aws_secretsmanager_secret.frontend_url.id
+  secret_id     = aws_secretsmanager_secret.frontend_url.id
   secret_string = "${aws_lb.ecs.dns_name}:3000"
 }
 
