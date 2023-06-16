@@ -119,8 +119,12 @@ resource "aws_lb_listener" "http_to_frontend" {
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
+    type             = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
   depends_on = [aws_lb_target_group.frontend]
 }
@@ -336,7 +340,7 @@ resource "aws_secretsmanager_secret" "lb_url" {
 
 resource "aws_secretsmanager_secret_version" "lb_url" {
   secret_id     = aws_secretsmanager_secret.lb_url.id
-  secret_string = "${aws_lb.ecs.dns_name}:8000"
+  secret_string = "api.${local.env_domain_name}"
 }
 
 resource "aws_secretsmanager_secret" "frontend_url" {
@@ -345,7 +349,7 @@ resource "aws_secretsmanager_secret" "frontend_url" {
 
 resource "aws_secretsmanager_secret_version" "frontend_url" {
   secret_id     = aws_secretsmanager_secret.frontend_url.id
-  secret_string = "${aws_lb.ecs.dns_name}:3000"
+  secret_string = "chat.${local.env_domain_name}"
 }
 
 output "load_balancer_url" {
