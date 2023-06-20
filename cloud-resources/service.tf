@@ -63,8 +63,8 @@ resource "aws_ecs_task_definition" "service" {
   ])
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "8 vCPU"
-  memory                   = "32 GB"
+  cpu                      = 8192
+  memory                   = 1024 * 32
   task_role_arn            = aws_iam_role.task_role.arn
   execution_role_arn       = aws_iam_role.execution_role.arn
 
