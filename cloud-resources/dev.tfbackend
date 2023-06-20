@@ -1,0 +1,2 @@
+bucket = "tfstate-qimia-ai-dev-tst01"
+region = "eu-central-1"

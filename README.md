@@ -90,3 +90,51 @@ For open source projects, say how it is licensed.
 
 ## Project status
 If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+
+## Authentication of the CI Pipeline to deploy AWS services
+We create a role that the Gitlab CI pipeline assumes the role {ENV}-qimia-ai-infra with OIDC.
+The trust relationship of the role looks as below:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Federated": "arn:aws:iam::906856305748:oidc-provider/gitlab.com"
+            },
+            "Action": "sts:AssumeRoleWithWebIdentity",
+            "Condition": {
+                "StringEquals": {
+                    "gitlab.com:aud": "https://gitlab.com"
+                },
+                "StringLike": {
+                    "gitlab.com:sub": "project_path:qimiaio/qimia-ai-dev/infra*"
+                }
+            }
+        }
+    ]
+}
+```
+An identity provider called gitlab.com is required.
+
+# Folders
+## ci_cd
+This directory includes the environment (dev, preprod, prod) specific configurations and variables as well as bash scripts.
+## cloud-resources
+The Terraform templates to create the AWS resources are put here.
+
+
+# CI/CD pipeline
+The pipeline consists of three steps.
+## version
+This stage gives a version ID to the deployment. 
+If the pipeline isn't merged to main yet, you'll get the commit ID as the version.
+Otherwise, semantic versioning will be used to set the current version.
+## plan
+The `plan` stages are environment specific. 
+Using Terraform templates under cloud-resources directory, the changes will be detected and exported to an output file.
+No changes will be applied to the AWS stack at this stage.
+## deploy
+The `deploy` stages are also environment specific but are triggered manually unlike the plan stages. 

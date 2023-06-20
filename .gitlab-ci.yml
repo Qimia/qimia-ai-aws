@@ -1,0 +1,97 @@
+image: zenika/terraform-aws-cli:release-6.0_terraform-1.3.7_awscli-1.27.60
+stages:
+  - version
+  - plan
+  - deploy
+
+
+variables:
+  AWS_REGION: eu-central-1
+  AWS_PROFILE: oidc
+
+
+.dev-tags: &dev-tags
+  tags:
+    - gitlab-org
+
+version:
+  stage: version
+  script:
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "$CI_COMMIT_TAG-prod" > .version
+      elif [[ $CI_COMMIT_BRANCH == release/* ]] || [[ $CI_COMMIT_BRANCH == hotfix/* ]]; then
+        echo "$CI_COMMIT_SHORT_SHA-preprod" > .version
+      else
+        echo "$CI_COMMIT_SHORT_SHA" > .version
+      fi
+  <<: *dev-tags
+  only:
+    - dev
+    - merge_requests
+    - tags
+    - /^release\/.+$/
+    - /^hotfix\/.+$/
+  artifacts:
+    paths:
+      - .version
+
+.aws_init:
+  before_script:
+    - mkdir -p ~/.aws
+    - echo "${CI_JOB_JWT_V2}" > /tmp/web_identity_token
+    - echo -e "[profile oidc]\nrole_arn=arn:aws:iam::906856305748:role/dev-qimia-ai-infra\nweb_identity_token_file=/tmp/web_identity_token" > ~/.aws/config
+    - aws sts get-caller-identity
+
+.plan: &plan
+  extends: .aws_init
+  stage: plan
+  variables:
+    ENV: $CI_ENVIRONMENT_NAME
+  needs:
+    - version
+  script:
+    - source ci_cd/plan.sh $ENV
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - ./plan-artifacts/
+
+plan-dev:
+  extends: .plan
+  variables:
+    TF_VAR_account: 906856305748
+  environment:
+    name: dev
+  <<: *dev-tags
+  only:
+    - dev
+    - merge_requests
+    - tags
+    - /^release\/.+$/
+    - /^hotfix\/.+$/
+
+.deploy:
+  extends: .aws_init
+  stage: deploy
+  when: manual
+  variables:
+    ENV: $CI_ENVIRONMENT_NAME
+  script:
+    - source ci_cd/deploy.sh $ENV
+
+
+deploy-dev:
+  extends: .deploy
+  needs:
+    - version
+    - plan-dev
+  <<: *dev-tags
+  environment:
+    name: dev
+  only:
+    - dev
+    - /^release\/.+$/
+    - /^hotfix\/.+$/
+    - merge_requests
+    - tags
