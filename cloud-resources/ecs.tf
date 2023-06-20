@@ -60,6 +60,7 @@ resource "aws_security_group" "lb" {
 }
 
 resource "aws_lb" "ecs" {
+  idle_timeout       = 120
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb.id]
@@ -119,7 +120,7 @@ resource "aws_lb_listener" "http_to_frontend" {
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type             = "redirect"
+    type = "redirect"
     redirect {
       port        = "443"
       protocol    = "HTTPS"

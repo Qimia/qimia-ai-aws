@@ -4,8 +4,8 @@ resource "aws_ecs_task_definition" "service" {
     {
       name      = "${local.app_name}-task"
       image     = "906856305748.dkr.ecr.eu-central-1.amazonaws.com/qimia-ai-dev:latest"
-      cpu       = 1792
-      memory    = 1024 * 10
+      cpu       = 1024 * 6 # 6 vCPU
+      memory    = 1024 * 24 # 24 GB
       essential = true
       environment = [
         {
@@ -31,8 +31,8 @@ resource "aws_ecs_task_definition" "service" {
       }, {
       name      = "${local.app_name}-frontend-task"
       image     = "${aws_ecr_repository.frontend_repo.repository_url}:latest"
-      cpu       = 256
-      memory    = 1024 * 2
+      cpu       = 1024 # 1 vCPU
+      memory    = 1024 * 4 # 4 GB
       essential = true
       environment = [
         {
@@ -63,10 +63,16 @@ resource "aws_ecs_task_definition" "service" {
   ])
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = 2048
-  memory                   = 1024 * 12
+  cpu                      = 8192
+  memory                   = 1024 * 32
   task_role_arn            = aws_iam_role.task_role.arn
   execution_role_arn       = aws_iam_role.execution_role.arn
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
 
 }
 
