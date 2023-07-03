@@ -1,5 +1,5 @@
 data "aws_acm_certificate" "qimiaai" {
-  domain = "qimiaai.com"
+  domain = local.app_dns
 }
 
 resource "aws_ecs_cluster" "app_cluster" {
@@ -67,20 +67,9 @@ resource "aws_lb" "ecs" {
   subnets            = [for subnet in aws_subnet.public : subnet.id]
 }
 
-resource "aws_lb_listener" "ecs_to_tg" {
-  load_balancer_arn = aws_lb.ecs.arn
-  port              = 8000
-  protocol          = "HTTP"
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.ecs.arn
-  }
-  depends_on = [aws_lb_target_group.ecs]
-}
-
 resource "aws_lb_listener" "https_to_backend" {
   load_balancer_arn = aws_lb.ecs.arn
-  port              = 443
+  port              = 442
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = data.aws_acm_certificate.qimiaai.arn
@@ -106,34 +95,18 @@ resource "aws_lb_listener_rule" "https_to_backend" {
 
   condition {
     host_header {
-      values = ["api.${local.env_domain_name}"]
+      values = [local.backend_dns]
     }
   }
 }
 
 
 
-
-
-resource "aws_lb_listener" "http_to_frontend" {
-  load_balancer_arn = aws_lb.ecs.arn
-  port              = 80
-  protocol          = "HTTP"
-  default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
-  }
-  depends_on = [aws_lb_target_group.frontend]
-}
 
 
 resource "aws_lb_listener" "https_to_frontend" {
   load_balancer_arn = aws_lb.ecs.arn
-  port              = 443
+  port              = 442
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   certificate_arn   = data.aws_acm_certificate.qimiaai.arn
@@ -159,30 +132,14 @@ resource "aws_lb_listener_rule" "https_to_frontend" {
 
   condition {
     host_header {
-      values = ["chat.${local.env_domain_name}"]
+      values = [local.frontend_dns]
     }
   }
 }
 
 
-
-resource "aws_lb_listener" "frontend_tg" {
-  load_balancer_arn = aws_lb.ecs.arn
-  port              = 3000
-  protocol          = "HTTP"
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
-  depends_on = [aws_lb_target_group.frontend]
-}
-
 ### Definition of the ECS Execution Role
 ### This is the role attached to the ECS cluster that allows it to do cluster management tasks such as pulling images from ECS etc.
-data "aws_ecr_repository" "tempimage" {
-  name = "abdullahrepo"
-}
-
 data "aws_iam_policy_document" "execution_role" {
   statement {
     actions = [
@@ -325,6 +282,16 @@ resource "aws_security_group" "ecs_service" {
   }
 }
 
+resource "aws_vpc_security_group_ingress_rule" "ecs_to_rds" {
+  security_group_id            = aws_security_group.allow_tls[0].id
+  referenced_security_group_id = aws_security_group.ecs_service.id
+  from_port                    = 5432
+  to_port                      = 5432
+  ip_protocol                  = "tcp"
+  description                  = "Allow access from ECS Fargate"
+}
+
+
 data "aws_ssm_parameters_by_path" "parameters" {
   path = "/${local.app_name}/"
 }
@@ -341,7 +308,7 @@ resource "aws_secretsmanager_secret" "lb_url" {
 
 resource "aws_secretsmanager_secret_version" "lb_url" {
   secret_id     = aws_secretsmanager_secret.lb_url.id
-  secret_string = "api.${local.env_domain_name}"
+  secret_string = local.backend_dns
 }
 
 resource "aws_secretsmanager_secret" "frontend_url" {
@@ -350,7 +317,7 @@ resource "aws_secretsmanager_secret" "frontend_url" {
 
 resource "aws_secretsmanager_secret_version" "frontend_url" {
   secret_id     = aws_secretsmanager_secret.frontend_url.id
-  secret_string = "chat.${local.env_domain_name}"
+  secret_string = local.frontend_dns
 }
 
 output "load_balancer_url" {
