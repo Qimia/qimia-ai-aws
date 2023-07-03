@@ -16,14 +16,6 @@ resource "aws_security_group" "allow_tls" {
   description = "Allow access to the Qimia AI database"
   vpc_id      = aws_vpc.the_vpc.id
 
-
-  ingress {
-    security_groups = [aws_security_group.ecs_service.id]
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-  }
-
   egress {
     from_port        = 0
     to_port          = 0
