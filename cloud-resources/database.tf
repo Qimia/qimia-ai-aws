@@ -64,7 +64,7 @@ resource "aws_rds_cluster_instance" "reader" {
 
 ## The master username for postgres
 resource "aws_secretsmanager_secret" "postgres_master_username" {
-  name  = "${local.secret_resource_prefix}database_master_username"
+  name = "${local.secret_resource_prefix}database_master_username"
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_master_username" {
@@ -75,7 +75,7 @@ resource "aws_secretsmanager_secret_version" "postgres_master_username" {
 
 ## The master password for postgres
 resource "aws_secretsmanager_secret" "postgres_master_password" {
-  name  = "${local.secret_resource_prefix}database_master_password"
+  name = "${local.secret_resource_prefix}database_master_password"
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_master_password" {
@@ -87,7 +87,7 @@ resource "aws_secretsmanager_secret_version" "postgres_master_password" {
 
 ## The master password for postgres
 resource "aws_secretsmanager_secret" "postgres_host" {
-  name  = "${local.secret_resource_prefix}postgres_host"
+  name = "${local.secret_resource_prefix}postgres_host"
 }
 
 resource "aws_secretsmanager_secret_version" "postgres_host" {

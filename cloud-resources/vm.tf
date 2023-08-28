@@ -12,14 +12,15 @@ data "aws_ec2_instance_type" "server_instance" {
 locals {
   total_available_vcpu      = data.aws_ec2_instance_type.server_instance.default_vcpus
   total_available_memory_mb = data.aws_ec2_instance_type.server_instance.memory_size
-  reserved_memory_mb        = 1 * 1024
-  frontend_vcpus            = 1
-  frontend_memory_mb        = 1.5 * 1024
-  webapi_vcpus              = 1
-  webapi_memory_mb          = 1 * 1024
+  reserved_memory_mb        = var.reserved_memory_gb * 1024
+  frontend_vcpus            = var.frontend_vcpu
+  frontend_memory_mb        = var.frontend_memory_gb * 1024
+  webapi_vcpus              = var.webapi_vcpu
+  webapi_memory_mb          = var.webapi_memory_gb * 1024
   model_vcpus               = local.total_available_vcpu - local.frontend_vcpus - local.webapi_vcpus
-  model_n_threads           = floor(local.model_vcpus / 2)
+  model_n_threads           = var.model_num_threads == 0 ? floor(local.model_vcpus / 2) : var.model_num_threads
   model_memory_mb           = local.total_available_memory_mb - local.reserved_memory_mb - local.frontend_memory_mb - local.webapi_memory_mb
+  ec2_models_path           = "/home/ec2-user/models/"
 }
 
 resource "aws_ecs_task_definition" "ec2_service" {
@@ -53,7 +54,12 @@ resource "aws_ecs_task_definition" "ec2_service" {
           awslogs-stream-prefix = local.app_name
         }
       }
-      mountPoints  = []
+      mountPoints = [
+        {
+          sourceVolume  = "models"
+          containerPath = "/models/"
+        }
+      ]
       volumesFrom  = []
       portMappings = []
     },
@@ -114,6 +120,10 @@ resource "aws_ecs_task_definition" "ec2_service" {
       ]
     }
   ])
+  volume {
+    name      = "models"
+    host_path = local.ec2_models_path
+  }
 
   requires_compatibilities = ["EC2"]
   network_mode             = "host"
@@ -207,7 +217,7 @@ resource "aws_vpc_security_group_ingress_rule" "temp_global_access_ec2" {
 resource "aws_launch_configuration" "ecs_launch_config" {
   image_id             = data.aws_ssm_parameter.aws_iam_image_id.value
   iam_instance_profile = aws_iam_instance_profile.runner_task_role.name
-  user_data            = "#!/bin/bash\necho 'ECS_CLUSTER=${aws_ecs_cluster.app_cluster.name}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
+  user_data            = "#!/bin/bash\nmkdir -p ${local.ec2_models_path}\necho 'ECS_CLUSTER=${aws_ecs_cluster.app_cluster.name}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
   instance_type        = data.aws_ec2_instance_type.server_instance.instance_type
   key_name             = "devops"
   security_groups = [
@@ -281,7 +291,7 @@ resource "aws_lb_target_group" "ec2_frontend" {
     healthy_threshold   = 2
   }
   deregistration_delay = "30"
-  slow_start = 180
+  slow_start           = 180
 }
 
 resource "aws_lb_listener" "https_to_ec2_backend" {
@@ -334,6 +344,6 @@ resource "aws_lb_target_group" "ec2_backend" {
     healthy_threshold   = 2
   }
   deregistration_delay = "30"
-  slow_start = 180
+  slow_start           = 180
 }
 
