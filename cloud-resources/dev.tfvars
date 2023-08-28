@@ -1,2 +1,2 @@
 account                 = 906856305748
-create_shared_resources = true
+model_machine_type      = "t3.xlarge"

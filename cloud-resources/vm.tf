@@ -1,7 +1,25 @@
 locals {
-  ec2_model_container_name    = "model"
+  ec2_model_container_name    = "llama-model"
+  ec2_webapi_container_name   = "web-api"
   ec2_frontend_container_name = "frontend"
   ec2_service_name            = "${local.app_name}-ec2"
+}
+
+data "aws_ec2_instance_type" "server_instance" {
+  instance_type = var.model_machine_type
+}
+
+locals {
+  total_available_vcpu      = data.aws_ec2_instance_type.server_instance.default_vcpus
+  total_available_memory_mb = data.aws_ec2_instance_type.server_instance.memory_size
+  reserved_memory_mb        = 1 * 1024
+  frontend_vcpus            = 1
+  frontend_memory_mb        = 1.5 * 1024
+  webapi_vcpus              = 1
+  webapi_memory_mb          = 1 * 1024
+  model_vcpus               = local.total_available_vcpu - local.frontend_vcpus - local.webapi_vcpus
+  model_n_threads           = floor(local.model_vcpus / 2)
+  model_memory_mb           = local.total_available_memory_mb - local.reserved_memory_mb - local.frontend_memory_mb - local.webapi_memory_mb
 }
 
 resource "aws_ecs_task_definition" "ec2_service" {
@@ -9,13 +27,21 @@ resource "aws_ecs_task_definition" "ec2_service" {
   container_definitions = jsonencode([
     {
       name   = local.ec2_model_container_name
-      image  = "${aws_ecr_repository.app_repo.repository_url}:latest"
-      cpu    = 1024 * 3
-      memory = 1024 * 13
+      image  = "${aws_ecr_repository.model_repo.repository_url}:latest"
+      cpu    = local.model_vcpus * 1024
+      memory = local.model_memory_mb
       environment = [
         {
           name  = "S3_MODEL_PATH",
           value = "s3://${data.aws_s3_object.model_binary.id}"
+        },
+        {
+          name  = "NUM_THREADS",
+          value = tostring(local.model_n_threads)
+        },
+        {
+          name  = "CONTEXT_SIZE",
+          value = "2048"
         }
       ]
       essential = true
@@ -27,9 +53,30 @@ resource "aws_ecs_task_definition" "ec2_service" {
           awslogs-stream-prefix = local.app_name
         }
       }
-
+      mountPoints  = []
+      volumesFrom  = []
+      portMappings = []
+    },
+    {
+      name        = local.ec2_webapi_container_name
+      image       = "${aws_ecr_repository.python_web.repository_url}:latest"
+      cpu         = local.webapi_vcpus * 1024
+      memory      = local.webapi_memory_mb
+      essential   = false
+      environment = []
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.service_log_group.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = local.app_name
+        }
+      }
+      mountPoints = []
+      volumesFrom = []
       portMappings = [
         {
+          protocol      = "tcp"
           containerPort = 8000
           hostPort      = 8000
         }
@@ -37,16 +84,18 @@ resource "aws_ecs_task_definition" "ec2_service" {
     },
     {
       name      = local.ec2_frontend_container_name
-      image     = "${aws_ecr_repository.frontend_repo.repository_url}:latest"
-      cpu       = 1024     # 1 vCPU
-      memory    = 1024 * 2 # 4 GB
-      essential = true
+      image     = "${aws_ecr_repository.frontend_zmq_repo.repository_url}:latest"
+      cpu       = local.frontend_vcpus * 1024
+      memory    = local.frontend_memory_mb
+      essential = false
       environment = [
         {
           name  = "ENV",
           value = var.env
         }
       ]
+      mountPoints = []
+      volumesFrom = []
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -58,6 +107,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
 
       portMappings = [
         {
+          protocol      = "tcp"
           containerPort = 3000
           hostPort      = 3000
         }
@@ -85,9 +135,10 @@ resource "aws_ecs_service" "ec2_service" {
   name            = local.ec2_service_name
   cluster         = aws_ecs_cluster.app_cluster.id
   task_definition = aws_ecs_task_definition.ec2_service.arn
-  desired_count   = 2
+  desired_count   = 1
 
-  launch_type = "EC2"
+  enable_execute_command = true
+  launch_type            = "EC2"
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ec2_frontend.arn
@@ -97,7 +148,7 @@ resource "aws_ecs_service" "ec2_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ec2_backend.arn
-    container_name   = local.ec2_model_container_name
+    container_name   = local.ec2_webapi_container_name
     container_port   = 8000
   }
 
@@ -137,7 +188,7 @@ resource "aws_vpc_security_group_ingress_rule" "lb_to_ec2" {
 
 resource "aws_vpc_security_group_ingress_rule" "ec2_to_rds" {
   ip_protocol                  = "tcp"
-  security_group_id            = aws_security_group.allow_tls[0].id
+  security_group_id            = aws_security_group.allow_tls.id
   referenced_security_group_id = aws_security_group.ec2_security_group.id
   from_port                    = 5432
   to_port                      = 5432
@@ -157,7 +208,7 @@ resource "aws_launch_configuration" "ecs_launch_config" {
   image_id             = data.aws_ssm_parameter.aws_iam_image_id.value
   iam_instance_profile = aws_iam_instance_profile.runner_task_role.name
   user_data            = "#!/bin/bash\necho 'ECS_CLUSTER=${aws_ecs_cluster.app_cluster.name}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
-  instance_type        = "t3.xlarge"
+  instance_type        = data.aws_ec2_instance_type.server_instance.instance_type
   key_name             = "devops"
   security_groups = [
     aws_security_group.ec2_security_group.id
@@ -171,7 +222,7 @@ resource "aws_autoscaling_group" "this" {
   vpc_zone_identifier  = [for subnet in aws_subnet.public : subnet.id]
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
 
-  desired_capacity          = 2
+  desired_capacity          = 1
   min_size                  = 0
   max_size                  = 3
   health_check_grace_period = 300
@@ -229,6 +280,7 @@ resource "aws_lb_target_group" "ec2_frontend" {
     unhealthy_threshold = 5
     healthy_threshold   = 2
   }
+  deregistration_delay = "30"
   slow_start = 180
 }
 
@@ -281,6 +333,7 @@ resource "aws_lb_target_group" "ec2_backend" {
     unhealthy_threshold = 5
     healthy_threshold   = 2
   }
+  deregistration_delay = "30"
   slow_start = 180
 }
 

@@ -10,6 +10,7 @@ variable "env" {
   type        = string
   default     = "dev"
 }
+
 variable "account" {
   description = "AWS Account ID"
   type        = number
@@ -22,8 +23,7 @@ variable "region" {
   default     = "eu-central-1"
 }
 
-variable "create_shared_resources" {
-  description = "You need to set this variable to false when you want to make a local deployment."
-  type        = bool
-  default     = false
+variable "model_machine_type" {
+  description = "The machine type to use for the model, backend and frontend."
+  type        = string
 }

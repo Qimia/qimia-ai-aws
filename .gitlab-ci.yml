@@ -37,9 +37,12 @@ version:
       - .version
 
 .aws_init:
+  id_tokens:
+    AWS_ID_TOKEN:
+      aud: https://gitlab.com
   before_script:
     - mkdir -p ~/.aws
-    - echo "${CI_JOB_JWT_V2}" > /tmp/web_identity_token
+    - echo "${AWS_ID_TOKEN}" > /tmp/web_identity_token
     - echo -e "[profile oidc]\nrole_arn=arn:aws:iam::906856305748:role/dev-qimia-ai-infra\nweb_identity_token_file=/tmp/web_identity_token" > ~/.aws/config
     - aws sts get-caller-identity
 
