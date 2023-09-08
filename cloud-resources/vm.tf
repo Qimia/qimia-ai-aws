@@ -57,7 +57,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
       mountPoints = [
         {
           sourceVolume  = "models"
-          containerPath = "/models/"
+           containerPath = "/app/models/"
         }
       ]
       volumesFrom  = []
@@ -223,6 +223,9 @@ resource "aws_launch_configuration" "ecs_launch_config" {
   security_groups = [
     aws_security_group.ec2_security_group.id
   ]
+  root_block_device {
+    volume_size = 100
+  }
 }
 
 
