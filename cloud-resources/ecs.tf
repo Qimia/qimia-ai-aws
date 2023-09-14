@@ -91,3 +91,15 @@ resource "aws_secretsmanager_secret_version" "frontend_url" {
 output "load_balancer_url" {
   value = aws_lb.ecs.dns_name
 }
+
+resource "aws_secretsmanager_secret" "email_address" {
+  name = "${local.secret_resource_prefix}email_address"
+}
+
+resource "aws_secretsmanager_secret" "email_password" {
+  name = "${local.secret_resource_prefix}email_password"
+}
+
+resource "aws_secretsmanager_secret" "email_smtp_send_address" {
+  name = "${local.secret_resource_prefix}email_smtp_send_address"
+}

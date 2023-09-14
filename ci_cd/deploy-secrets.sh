@@ -3,7 +3,16 @@ set -o allexport
 source ".manual-secrets-config"
 set +o allexport
 
-Echo "Using key vault $KEY_VAULT_NAME"
-[ ! -z "$EMAIL_PASSWORD" ] &&  az keyvault secret set --name email-password --vault-name "$KEY_VAULT_NAME" --value "$EMAIL_PASSWORD" --content-type "The email address password to the address defined in the secret 'email-address'." || echo "EMAIL_PASSWORD not set, skipping"
-[ ! -z "$EMAIL_ADDRESS" ] &&  az keyvault secret set --name email-address --vault-name "$KEY_VAULT_NAME" --value "$EMAIL_ADDRESS" --content-type "The email address to communicate to the  users regarding activation and email resets etc."  || echo "EMAIL_ADDRESS not set, skipping"
-[ ! -z "$SMTP_SEND_ADDRESS" ] &&  az keyvault secret set --name email-smtp --vault-name "$KEY_VAULT_NAME" --value "$SMTP_SEND_ADDRESS" --content-type "The smtp email send address for the email address defined in the secret 'email-address'."  || echo "SMTP_SEND_ADDRESS not set, skipping"
+put_secret () {
+  FIELD_NAME=$1
+  FIELD_VALUE=$2
+  [ ! -z "$FIELD_VALUE" ] && echo "Putting $FIELD_NAME" || return
+  secret_full_arn=$(aws secretsmanager describe-secret --secret-id "arn:aws:secretsmanager:$REGION:$AWS_ACCOUNT_ID:secret:/qimia-ai/$ENV/$FIELD_NAME" --query 'ARN' --output text)
+  echo "Putting the value to secret $secret_full_arn"
+  res=$(aws secretsmanager put-secret-value --secret-id "$secret_full_arn" --secret-string "$FIELD_VALUE")
+  echo $res
+}
+
+put_secret "email_password" "$EMAIL_PASSWORD"
+put_secret "email_address" "$EMAIL_ADDRESS"
+put_secret "email_smtp_send_address" "$SMTP_SEND_ADDRESS"
