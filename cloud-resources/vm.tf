@@ -69,7 +69,16 @@ resource "aws_ecs_task_definition" "ec2_service" {
       cpu         = local.webapi_vcpus * 1024
       memory      = local.webapi_memory_mb
       essential   = false
-      environment = []
+      environment = [
+        {
+          name  = "ENV",
+          value = var.env
+        },
+        {
+          name = "CLOUD",
+          value = "aws"
+        }
+      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
