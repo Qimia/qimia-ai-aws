@@ -37,7 +37,7 @@ variable "model_bucket" {
 variable "model_object_key" {
   description = "The key of the model binary within the model bucket."
   type        = string
-  default     = "ggml-vicuna-7b/ggml-vicuna-7b-q4_0-300523.bin"
+  default     = "ggml-vicuna-7b-v1.5/ggml-model-q4_1.gguf"
 }
 
 variable "frontend_vcpu" {
