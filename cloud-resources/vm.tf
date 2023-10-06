@@ -18,7 +18,7 @@ locals {
   webapi_vcpus              = var.webapi_vcpu
   webapi_memory_mb          = var.webapi_memory_gb * 1024
   model_vcpus               = local.total_available_vcpu - local.frontend_vcpus - local.webapi_vcpus
-  model_n_threads           = var.model_num_threads == 0 ? floor(local.model_vcpus / 2) : var.model_num_threads
+  model_n_threads           = var.model_num_threads == 0 ? ceil(local.model_vcpus / 2) : var.model_num_threads
   model_memory_mb           = local.total_available_memory_mb - local.reserved_memory_mb - local.frontend_memory_mb - local.webapi_memory_mb
   ec2_models_path           = "/home/ec2-user/models/"
 }
@@ -68,7 +68,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
       image       = "${aws_ecr_repository.python_web.repository_url}:latest"
       cpu         = local.webapi_vcpus * 1024
       memory      = local.webapi_memory_mb
-      essential   = false
+      essential   = true
       environment = [
         {
           name  = "ENV",
@@ -102,7 +102,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
       image     = "${aws_ecr_repository.frontend_zmq_repo.repository_url}:latest"
       cpu       = local.frontend_vcpus * 1024
       memory    = local.frontend_memory_mb
-      essential = false
+      essential   = true
       environment = [
         {
           name  = "ENV",
@@ -143,6 +143,8 @@ resource "aws_ecs_task_definition" "ec2_service" {
 
 data "aws_ssm_parameter" "aws_iam_image_id" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
+#  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/inf/recommended/image_id"
+
 }
 
 resource "aws_cloudwatch_log_group" "service_log_group" {

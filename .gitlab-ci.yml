@@ -43,7 +43,7 @@ version:
   before_script:
     - mkdir -p ~/.aws
     - echo "${AWS_ID_TOKEN}" > /tmp/web_identity_token
-    - echo -e "[profile oidc]\nrole_arn=arn:aws:iam::906856305748:role/dev-qimia-ai-infra\nweb_identity_token_file=/tmp/web_identity_token" > ~/.aws/config
+    - echo -e "[profile oidc]\nrole_arn=${AWS_ROLE_ARN}\nweb_identity_token_file=/tmp/web_identity_token" > ~/.aws/config
     - aws sts get-caller-identity
 
 .plan: &plan
@@ -51,6 +51,7 @@ version:
   stage: plan
   variables:
     ENV: $CI_ENVIRONMENT_NAME
+    TF_VAR_account: $AWS_ACCOUNT
   needs:
     - version
   script:
@@ -62,8 +63,6 @@ version:
 
 plan-dev:
   extends: .plan
-  variables:
-    TF_VAR_account: 906856305748
   environment:
     name: dev
   <<: *dev-tags
@@ -80,6 +79,7 @@ plan-dev:
   when: manual
   variables:
     ENV: $CI_ENVIRONMENT_NAME
+    TF_VAR_account: $AWS_ACCOUNT
   script:
     - source ci_cd/deploy.sh $ENV
 
