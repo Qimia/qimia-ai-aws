@@ -55,6 +55,7 @@ version:
   needs:
     - version
   script:
+    - cp "$TERRAFORM_VARIABLES" cloud-resources/terraform.tfvars
     - source ci_cd/plan.sh $ENV
   artifacts:
     expire_in: 7 days
@@ -81,6 +82,7 @@ plan-dev:
     ENV: $CI_ENVIRONMENT_NAME
     TF_VAR_account: $AWS_ACCOUNT
   script:
+    - cp "$TERRAFORM_VARIABLES" cloud-resources/terraform.tfvars
     - source ci_cd/deploy.sh $ENV
 
 

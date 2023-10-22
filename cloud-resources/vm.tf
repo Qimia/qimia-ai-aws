@@ -7,6 +7,12 @@ locals {
 
 data "aws_ec2_instance_type" "server_instance" {
   instance_type = var.model_machine_type
+  lifecycle {
+     postcondition {
+      condition     = var.use_gpu ? length(self.gpus) > 0 : true
+      error_message = "When var.use_gpu is set to true, the number of gpus in the selected machine should be more than 0."
+    }
+  }
 }
 
 locals {
@@ -21,6 +27,8 @@ locals {
   model_n_threads           = var.model_num_threads == 0 ? ceil(local.model_vcpus / 2) : var.model_num_threads
   model_memory_mb           = local.total_available_memory_mb - local.reserved_memory_mb - local.frontend_memory_mb - local.webapi_memory_mb
   ec2_models_path           = "/home/ec2-user/models/"
+
+  model_image_registry = var.use_gpu ? aws_ecr_repository.model_gpu_repo.repository_url : aws_ecr_repository.model_repo.repository_url
 }
 
 resource "aws_ecs_task_definition" "ec2_service" {
@@ -28,13 +36,17 @@ resource "aws_ecs_task_definition" "ec2_service" {
   container_definitions = jsonencode([
     {
       name   = local.ec2_model_container_name
-      image  = "${aws_ecr_repository.model_repo.repository_url}:latest"
+      image  = "${local.model_image_registry}:latest"
       cpu    = local.model_vcpus * 1024
       memory = local.model_memory_mb
-      environment = [
+      environment = concat([
         {
           name  = "S3_MODEL_PATH",
           value = "s3://${data.aws_s3_object.model_binary.id}"
+        },
+        {
+          name  = "MODEL_FILE",
+          value = "current.bin"
         },
         {
           name  = "NUM_THREADS",
@@ -44,7 +56,8 @@ resource "aws_ecs_task_definition" "ec2_service" {
           name  = "CONTEXT_SIZE",
           value = "2048"
         }
-      ]
+      ], var.use_gpu ? [{ name = "NUM_GPU_LAYERS", value = "200000" } ] : []
+        )
       essential = true
       logConfiguration = {
         logDriver = "awslogs"
@@ -60,6 +73,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
            containerPath = "/app/models/"
         }
       ]
+      resourceRequirements = [{"value": "1", "type": "GPU"}]
       volumesFrom  = []
       portMappings = []
     },
@@ -142,7 +156,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
 
 
 data "aws_ssm_parameter" "aws_iam_image_id" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
+  name = var.use_gpu ? "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended/image_id" : "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 #  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/inf/recommended/image_id"
 
 }
@@ -224,11 +238,19 @@ resource "aws_vpc_security_group_ingress_rule" "temp_global_access_ec2" {
   description       = "Allow access globally to EC2 - must be removed at a later time"
 }
 
+locals {
+  ECS_ENABLE_GPU_SUPPORT = var.use_gpu ? "true" : "false"
+
+  ecs_config_file = join("\n",[
+    "ECS_CLUSTER=${aws_ecs_cluster.app_cluster.name}",
+    "ECS_ENABLE_GPU_SUPPORT=${local.ECS_ENABLE_GPU_SUPPORT}"
+  ])
+}
 
 resource "aws_launch_configuration" "ecs_launch_config" {
   image_id             = data.aws_ssm_parameter.aws_iam_image_id.value
   iam_instance_profile = aws_iam_instance_profile.runner_task_role.name
-  user_data            = "#!/bin/bash\nmkdir -p ${local.ec2_models_path}\necho 'ECS_CLUSTER=${aws_ecs_cluster.app_cluster.name}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
+  user_data            = "#!/bin/bash\nmkdir -p ${local.ec2_models_path}\necho '${local.ecs_config_file}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
   instance_type        = data.aws_ec2_instance_type.server_instance.instance_type
   key_name             = "devops"
   security_groups = [

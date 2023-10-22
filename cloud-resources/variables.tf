@@ -14,7 +14,6 @@ variable "env" {
 variable "account" {
   description = "AWS Account ID"
   type        = number
-  default     = "906856305748"
 }
 
 variable "region" {
@@ -45,6 +44,7 @@ variable "frontend_vcpu" {
   type        = number
   default     = 0.5
 }
+
 variable "frontend_memory_gb" {
   description = "The memory for the frontend container"
   type        = number
@@ -70,4 +70,9 @@ variable "model_num_threads" {
   description = "The number of threads given to the model passed as an argument. Auto-derive if 0 otherwise set manually."
   type        = number
   default     = 2
+}
+variable "use_gpu" {
+  description = "Whether to use the GPU of the machine."
+  type = bool
+  default = false
 }
