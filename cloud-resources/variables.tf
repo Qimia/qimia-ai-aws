@@ -76,3 +76,15 @@ variable "use_gpu" {
   type = bool
   default = false
 }
+variable "app_dns" {
+  description = "The root level DNS e.g. qimiaai.com"
+  type = string
+}
+variable "backend_dns" {
+  description = "The DNS of backend e.g. api.qimiaai.com"
+  type = string
+}
+variable "frontend_dns" {
+  description = "The DNS of backend e.g. chat.qimiaai.com"
+  type = string
+}
