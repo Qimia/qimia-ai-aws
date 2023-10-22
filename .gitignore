@@ -1,4 +1,5 @@
 .idea
 cloud-resources/.terraform*
+cloud-resources/*.tfvars
 plan-artifacts
 .manual-secrets-config
