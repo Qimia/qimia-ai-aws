@@ -1,5 +1,5 @@
 data "aws_acm_certificate" "qimiaai" {
-  domain = local.app_dns
+  domain = var.app_dns
 }
 
 resource "aws_ecs_cluster" "app_cluster" {
@@ -76,7 +76,7 @@ resource "aws_secretsmanager_secret" "lb_url" {
 
 resource "aws_secretsmanager_secret_version" "lb_url" {
   secret_id     = aws_secretsmanager_secret.lb_url.id
-  secret_string = local.backend_dns
+  secret_string = var.backend_dns
 }
 
 resource "aws_secretsmanager_secret" "frontend_url" {
@@ -85,7 +85,7 @@ resource "aws_secretsmanager_secret" "frontend_url" {
 
 resource "aws_secretsmanager_secret_version" "frontend_url" {
   secret_id     = aws_secretsmanager_secret.frontend_url.id
-  secret_string = local.frontend_dns
+  secret_string = var.frontend_dns
 }
 
 output "load_balancer_url" {

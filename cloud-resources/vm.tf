@@ -304,7 +304,7 @@ resource "aws_lb_listener_rule" "https_to_ec2_frontend" {
 
   condition {
     host_header {
-      values = [local.frontend_dns]
+      values = [var.frontend_dns]
     }
   }
 }
@@ -357,7 +357,7 @@ resource "aws_lb_listener_rule" "https_to_ec2_backend" {
 
   condition {
     host_header {
-      values = [local.backend_dns]
+      values = [var.backend_dns]
     }
   }
 }
