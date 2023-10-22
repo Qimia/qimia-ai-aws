@@ -138,3 +138,22 @@ Using Terraform templates under cloud-resources directory, the changes will be d
 No changes will be applied to the AWS stack at this stage.
 ## deploy
 The `deploy` stages are also environment specific but are triggered manually unlike the plan stages. 
+
+## Setting up the pipeline
+Several variables need to be set in the repo's CI pipelin variable as follows:
+* `AWS_ACCOUNT`: The AWS account ID
+* `AWS_ROLE_ARN`: The AWS Role ARN that Terraform will assume.
+* `TERRAFORM_VARIABLES`: Needs to be defined as a file. Several variables are defined under this file in the `.tfvars` file format. Example is as follows:
+  ```hcl
+    model_machine_type  = "g4dn.xlarge"
+    model_object_key    = "ggml-vicuna-13b-v1.5/ggml-model-q4_1.gguf"
+    model_num_threads   = 2
+    use_gpu             = true
+    account             = 906856305748
+    app_dns             = "qimiaai.com"
+    backend_dns         = "api.qimiaai.com"
+    frontend_dns        = "chat.qimiaai.com"
+  ```
+
+  * In your CI implementation, during the plan and deploy stages, the file that contains these variables must be copied to the [cloud-resources/terraform.tfvars](cloud-resources/terraform.tfvars). 
+  * Alternatively, these can be defined as CI variables with the name prefix `TF_VAR`. For example, the terraform variable `model_machine_type` can be defined as `TF_VAR_model_machine_type` instead. 
