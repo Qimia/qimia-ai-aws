@@ -54,7 +54,7 @@ resource "aws_ecs_task_definition" "ec2_service" {
         },
         {
           name  = "CONTEXT_SIZE",
-          value = "2048"
+          value = "4096"
         }
       ], var.use_gpu ? [{ name = "NUM_GPU_LAYERS", value = "200000" } ] : []
         )
