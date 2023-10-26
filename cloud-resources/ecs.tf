@@ -10,7 +10,7 @@ resource "aws_ecs_cluster" "app_cluster" {
   }
 }
 resource "aws_security_group" "lb" {
-  vpc_id = aws_vpc.the_vpc.id
+  vpc_id = data.aws_vpc.the_vpc.id
   ingress {
     description      = "Allow all TCP"
     from_port        = 0
@@ -34,14 +34,14 @@ resource "aws_lb" "ecs" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.lb.id]
-  subnets            = [for subnet in aws_subnet.public : subnet.id]
+  subnets            = [for subnet in data.aws_subnet.public : subnet.id]
 }
 resource "aws_cloudwatch_log_group" "ecs_logs" {
   name = local.app_name
 }
 
 resource "aws_security_group" "ecs_service" {
-  vpc_id = aws_vpc.the_vpc.id
+  vpc_id = data.aws_vpc.the_vpc.id
   ingress {
     description      = "Allow all TCP"
     from_port        = 0
