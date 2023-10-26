@@ -247,26 +247,43 @@ locals {
   ])
 }
 
-resource "aws_launch_configuration" "ecs_launch_config" {
-  image_id             = data.aws_ssm_parameter.aws_iam_image_id.value
-  iam_instance_profile = aws_iam_instance_profile.runner_task_role.name
-  user_data            = "#!/bin/bash\nmkdir -p ${local.ec2_models_path}\necho '${local.ecs_config_file}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts"
-  instance_type        = data.aws_ec2_instance_type.server_instance.instance_type
-  key_name             = "devops"
-  security_groups = [
-    aws_security_group.ec2_security_group.id
-  ]
-  root_block_device {
-    volume_size = 100
+data aws_ami ami {
+  filter {
+    name   = "image-id"
+    values = [data.aws_ssm_parameter.aws_iam_image_id.value]
   }
+}
+
+resource "aws_launch_template" "ecs_launch_template" {
+  image_id = data.aws_ssm_parameter.aws_iam_image_id.value
+  iam_instance_profile {
+    name = aws_iam_instance_profile.runner_task_role.name
+  }
+  user_data = base64encode("#!/bin/bash\nmkdir -p ${local.ec2_models_path}\necho '${local.ecs_config_file}' >> /etc/ecs/ecs.config ; mkdir -p /var/run/artifacts")
+  instance_type = data.aws_ec2_instance_type.server_instance.instance_type
+  key_name = "devops"
+  vpc_security_group_ids = toset([
+    aws_security_group.ec2_security_group.id
+  ])
+
+  block_device_mappings {
+    device_name = data.aws_ami.ami.root_device_name
+    ebs {
+      volume_size = 100
+      volume_type = "gp3"
+    }
+  }
+
 }
 
 
 resource "aws_autoscaling_group" "this" {
-  name                 = "${local.secret_resource_prefix}-${aws_launch_configuration.ecs_launch_config.name}"
-  depends_on           = [aws_launch_configuration.ecs_launch_config]
+  name                 = "${local.secret_resource_prefix}-${aws_launch_template.ecs_launch_template.name}"
+  depends_on           = [aws_launch_template.ecs_launch_template]
   vpc_zone_identifier  = [for subnet in data.aws_subnet.public : subnet.id]
-  launch_configuration = aws_launch_configuration.ecs_launch_config.name
+  launch_template {
+    name = aws_launch_template.ecs_launch_template.name
+  }
 
   desired_capacity          = 1
   min_size                  = 0
