@@ -203,7 +203,7 @@ resource "aws_ecs_service" "ec2_service" {
 }
 
 resource "aws_security_group" "ec2_security_group" {
-  vpc_id = aws_vpc.the_vpc.id
+  vpc_id = data.aws_vpc.the_vpc.id
   egress {
     from_port        = 0
     to_port          = 0
@@ -265,7 +265,7 @@ resource "aws_launch_configuration" "ecs_launch_config" {
 resource "aws_autoscaling_group" "this" {
   name                 = "${local.secret_resource_prefix}-${aws_launch_configuration.ecs_launch_config.name}"
   depends_on           = [aws_launch_configuration.ecs_launch_config]
-  vpc_zone_identifier  = [for subnet in aws_subnet.public : subnet.id]
+  vpc_zone_identifier  = [for subnet in data.aws_subnet.public : subnet.id]
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
 
   desired_capacity          = 1
@@ -313,7 +313,7 @@ resource "aws_lb_target_group" "ec2_frontend" {
   port        = 3000
   protocol    = "HTTP"
   target_type = "instance"
-  vpc_id      = aws_vpc.the_vpc.id
+  vpc_id      = data.aws_vpc.the_vpc.id
 
   lifecycle {
     create_before_destroy = true
@@ -366,7 +366,7 @@ resource "aws_lb_target_group" "ec2_backend" {
   port        = 8000
   protocol    = "HTTP"
   target_type = "instance"
-  vpc_id      = aws_vpc.the_vpc.id
+  vpc_id      = data.aws_vpc.the_vpc.id
 
   lifecycle {
     create_before_destroy = true

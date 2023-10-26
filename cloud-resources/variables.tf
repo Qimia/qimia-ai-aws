@@ -88,3 +88,25 @@ variable "frontend_dns" {
   description = "The DNS of backend e.g. chat.qimiaai.com"
   type = string
 }
+variable "create_vpc" {
+  type = number
+  default = 1
+  description = "Whether to create a VPC and subnets. 1 for create 0 for use existing ones. Setting it to 0 requires the variables vpc_id, private_subnet_id and public_subnet_id."
+}
+variable "vpc_id" {
+  type = string
+  default = ""
+  description = "Only necessary when using an existing VPC."
+}
+
+variable "private_subnet_ids" {
+  type = list(string)
+  default = []
+  description = "List of private subnet IDs. Only necessary when using an existing VPC."
+}
+
+variable "public_subnet_ids" {
+  type = list(string)
+  default = []
+  description = "List of public subnet IDs. Only necessary when using an existing VPC."
+}

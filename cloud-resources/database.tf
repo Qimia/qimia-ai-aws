@@ -5,14 +5,14 @@ resource "random_password" "postgres_master_password" {
 
 resource "aws_db_subnet_group" "postgres" {
   name_prefix = "qimia-ai-${var.env}"
-  subnet_ids  = [for subnet in aws_subnet.private : subnet.id]
+  subnet_ids  = [for subnet in data.aws_subnet.private : subnet.id]
 }
 
 
 resource "aws_security_group" "allow_tls" {
   name_prefix = "Qimia AI DB - ${var.env}"
   description = "Allow access to the Qimia AI database"
-  vpc_id      = aws_vpc.the_vpc.id
+  vpc_id      = data.aws_vpc.the_vpc.id
 
   egress {
     from_port        = 0
