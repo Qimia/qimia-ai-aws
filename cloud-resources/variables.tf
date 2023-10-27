@@ -102,11 +102,11 @@ variable "vpc_id" {
 variable "private_subnet_ids" {
   type = list(string)
   default = []
-  description = "List of private subnet IDs. Only necessary when using an existing VPC."
+  description = "List of private subnet IDs. Exactly three must be given! Only necessary when using an existing VPC."
 }
 
 variable "public_subnet_ids" {
   type = list(string)
   default = []
-  description = "List of public subnet IDs. Only necessary when using an existing VPC."
+  description = "List of public subnet IDs. Exactly three must be given! Only necessary when using an existing VPC."
 }

@@ -91,6 +91,10 @@ resource "aws_ecs_task_definition" "ec2_service" {
         {
           name = "CLOUD",
           value = "aws"
+        },
+        {
+          name = "ENV_FILE_REMOTE_PATH",
+          value = "s3://${aws_s3_object.app_config_file.bucket}/${aws_s3_object.app_config_file.key}"
         }
       ]
       logConfiguration = {
