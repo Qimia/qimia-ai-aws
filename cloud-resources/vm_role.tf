@@ -37,8 +37,33 @@ resource "aws_iam_policy" "model_task_role" {
           "*"
         ]
         Effect   = "Allow"
-        Resource = ["*"]
-    }]
+        Resource = ["*"],
+
+    },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecretVersionIds",
+          "secretsmanager:ListSecrets",
+        ],
+        "Resource": "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+        ],
+        "Resource": [
+          aws_s3_bucket.devops_bucket.arn,
+          "${aws_s3_bucket.devops_bucket.arn}/*"
+        ]
+      }
+    ]
   })
 }
 
