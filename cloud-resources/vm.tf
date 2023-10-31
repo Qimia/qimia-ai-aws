@@ -125,6 +125,22 @@ resource "aws_ecs_task_definition" "ec2_service" {
         {
           name  = "ENV",
           value = var.env
+        },
+        {
+          name  = "NEXT_PUBLIC_API_URL"
+          value = "https://${var.backend_dns}"
+        },
+        {
+          name  = "NEXT_PUBLIC_IS_MARKDOWN"
+          value = "true"
+        },
+        {
+          name  = "NEXTAUTH_SECRET"
+          value = random_id.frontend_public_secret.hex
+        },
+        {
+          name  = "NEXTAUTH_URL"
+          value = "https://${var.frontend_dns}"
         }
       ]
       mountPoints = []
@@ -404,3 +420,7 @@ resource "aws_lb_target_group" "ec2_backend" {
   slow_start           = 180
 }
 
+
+resource "random_id" "frontend_public_secret" {
+  byte_length = 16
+}
